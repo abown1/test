@@ -6,10 +6,10 @@
 
 ## 重建（以實際 build.py 為準）
 入口：`_dev/v45/build.py`（Python 3，僅標準函式庫）。
-1. `build.py` 第3行 `D='/tmp/xw_release_20261107h/proj'` 是原環境絕對路徑；請改成你解壓後的根目錄（含 app/、site_v021/、_dev/ 的那層）。本包未改動此行，以保持與 h 逐 hash 一致。
+1. `build.py` 以腳本位置推導根目錄（含 app/、site_v021/、_dev/ 的那層），不再使用原環境絕對路徑。玩法組裝清單未改。
 2. 執行 `python3 _dev/v45/build.py`；輸出 `<根>/site_v045/`（部署資料夾）及 `<根>/仙武之體_Demo_v<VER>.html`（單檔版，VER 取自 g20.js CHANGELOG）。
 3. 組裝順序即 build.py 內 js 清單（126 模組＋g7），晚載入 wrapper 依此順序生效。
-4. 原環境工作區的 build.py 與 service-worker.js 和本包不同（僅 D 路徑與 CACHE 字串），本包以 h 快照為準。
+4. service-worker.js 的 CACHE 字串仍是 h 快照。玩法 js 清單與 h 相同；只有 build.py 的根目錄由絕對路徑改為依腳本位置推導。
 
 ## 未做的檢查
 本次只讀封裝：未重新 build、未比對重建後與 h 網站包 hash、未 boot/UI/IndexedDB/FPS/多人測試、未部署或上傳。僅核對 332 檔 hash 與憑證關鍵型態掃描（未發現實際金鑰；cloud_save.js 只在執行期使用登入 token，無寫死憑證）。原資料未修改。

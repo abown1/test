@@ -1,7 +1,8 @@
 # 組裝（版本號取自 g20.js CHANGELOG 第一筆）：輸出部署資料夾 site_v045/（含 noindex 設定）與單檔版
 import base64,os,shutil,json
-D='/tmp/xw_release_20261107h/proj'
 HERE=os.path.dirname(os.path.abspath(__file__))
+# 根目錄含 app/、site_v021/、_dev/。h 快照此處是另一台機器的絕對路徑。
+D=os.path.abspath(os.path.join(HERE,'..','..'))
 os.chdir(HERE)
 src=open('part1.html').read()
 import re as _re

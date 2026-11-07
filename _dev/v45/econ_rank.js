@@ -534,6 +534,15 @@ econAltarInstall();
 econAttachAltar();
 try{if(typeof setTimeout==='function')setTimeout(function(){econAltarInstall();econAttachAltar();},0);}catch(e){}
 
+function econRankPaintSect(){
+  if(typeof document==='undefined')return;
+  const bd=document.getElementById('econ-sect-bd');
+  const top=bd?bd.scrollTop:0;
+  document.querySelectorAll('#econ-sect [id="econ-rank-list"]').forEach(function(box){
+    box.outerHTML=econRankRosterHtml();
+  });
+  if(bd)bd.scrollTop=top;
+}
 function econAppointClickInstall(){
   if(typeof document==='undefined'||document._econApBound)return;
   document._econApBound=1;
@@ -543,10 +552,7 @@ function econAppointClickInstall(){
       ev.preventDefault();ev.stopPropagation();
       const post=econRankSetFilter(f.getAttribute('data-econ-rank'));
       try{document.querySelectorAll('.econ-rank-flt [data-econ-rank]').forEach(b=>{const on=b.getAttribute('data-econ-rank')===post;b.classList.toggle('on',on);b.classList.toggle('pri',on);});}catch(e){}
-      try{
-        const box=document.getElementById('econ-rank-list');
-        if(box&&!(typeof rosterEl==='function'&&rosterEl()&&rosterEl().contains(box)))box.outerHTML=econRankRosterHtml();
-      }catch(e){}
+      try{econRankPaintSect();}catch(e){}
       try{econRankInjectRoster();}catch(e){}
       return;
     }
@@ -565,6 +571,7 @@ function econAppointClickInstall(){
     const pn=r.post?(econPostById(r.post)||{}).name:'無職';
     try{toast(r.post?(name+' 就任「'+pn+'」'):(name+' 已撤職'));}catch(e){}
     try{panelKeyCache=null;}catch(e){}
+    try{econRankPaintSect();}catch(e){}
     try{if(typeof renderPanel==='function')renderPanel();}catch(e){}
     try{if(typeof renderRoster==='function')renderRoster(true);}catch(e){}
   },true);

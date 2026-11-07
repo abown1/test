@@ -216,7 +216,7 @@ function updateDisciple(u,dt){
   // 自衛／守衛：附近有敵人就迎戰（玩家強制命令期間不接戰）
   const t=u.task;
   const forced=(typeof xmvOn==='function'&&xmvOn(u))||!!(u.xcmd&&S.time<u.xcmd.until);
-  if(!forced&&(!t||t.type!=='move'&&t.type!=='attack')){
+  if(!forced&&(!t||t.type!=='move'&&t.type!=='attack'&&t.type!=='astruct'&&t.type!=='build'&&t.type!=='repair')){
     let rad=u.job==='guard'?3.2:u.job==='follow'?(S.dg?3.5:2.2):1.0; // 20261106n：再縮索敵，減少遠距追妖狼
     if(u.inside)rad=0;
     const ctr=u.job==='guard'&&u.guardAt?u.guardAt:u.job==='follow'?player()||u:u;

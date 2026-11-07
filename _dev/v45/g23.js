@@ -619,11 +619,25 @@ const XNC={atk:0,str:0,mv:0,miss:0};
 {const _ea=enemyAt;enemyAt=function(w){const r=_ea.apply(this,arguments);if(r)return r;const R=Math.max(isTouchUI?36:28,(isTouchUI?56:42)/Math.max(0.3,cam.zoom));let best=null,bd=R;
   for(const e of S.enemies){if(e.dead||!isExplored(e.x,e.y))continue;const p=iso(e.x,e.y),off=e.type==='king'?24:10;const d=Math.min(dist(w.x,w.y,p.x,p.y-off),dist(w.x,w.y,p.x,p.y-off*2),dist(w.x,w.y,p.x,p.y));if(d<bd){bd=d;best=e;}}return best;};}
 function xncHostileS(s){if(!s||s.dead||!s.maxhp)return false;const v=vById(s.vid);return !!(v&&v.type==='bandit');}
+function xwStructHit(w){
+  const s=typeof structAt==='function'?structAt(w):null;
+  if(xncHostileS(s))return s;
+  if(!w||!S||!S.vstructs)return null;
+  let best=null,bd=1.35;
+  for(const o of S.vstructs){
+    if(!xncHostileS(o))continue;
+    const d=distRect(w.x,w.y,o.i,o.j,o.s||1);
+    if(d<bd){bd=d;best=o;}
+  }
+  return best;
+}
 function xncCmd(x,y){if(S.interior||buildMode||S.dg)return false;const w=screenToWorld(x,y),e=enemyAt(w),u=unitAt(w,S.units,14);
-  if(e){const pe=iso(e.x,e.y),de=dist(w.x,w.y,pe.x,pe.y-10);let du=1e9;if(u){const pu=iso(u.x,u.y);du=dist(w.x,w.y,pu.x,pu.y-14);}
+  const hs=xwStructHit(w);
+  if(e&&!hs){const pe=iso(e.x,e.y),de=dist(w.x,w.y,pe.x,pe.y-10);let du=1e9;if(u){const pu=iso(u.x,u.y);du=dist(w.x,w.y,pu.x,pu.y-14);}
     // 點偏一點仍優先鎖敵（單位需明顯更近才改選單位）
     if(!u||de<=du+12){const us=commandUnits();if(!us.length)return false;us.forEach(v=>setTask(v,{type:'attack',eid:e.id,man:1,pack:xwAttackPack(e,v),ax:e.x,ay:e.y}));markers.push({x:e.x,y:e.y,t:0,col:'#ff5050'});XNC.atk++;return true;}}
-  if(!u){const s=structAt(w);if(xncHostileS(s)){const us=commandUnits();if(!us.length)return false;us.forEach(v=>setTask(v,{type:'astruct',sid:s.id}));markers.push({x:s.i+s.s/2,y:s.j+s.s/2,t:0,col:'#ff5050'});XNC.str++;return true;}}
+  if(hs){const us=commandUnits();if(!us.length)return false;us.forEach(v=>setTask(v,{type:'astruct',sid:hs.id}));markers.push({x:hs.i+hs.s/2,y:hs.j+hs.s/2,t:0,col:'#ff5050'});XNC.str++;return true;}
+  if(e){const us=commandUnits();if(!us.length)return false;us.forEach(v=>setTask(v,{type:'attack',eid:e.id,man:1,pack:xwAttackPack(e,v),ax:e.x,ay:e.y}));markers.push({x:e.x,y:e.y,t:0,col:'#ff5050'});XNC.atk++;return true;}
   return false;}
 // 短點不攻擊（觀察由 tapAt／leftClick 處理）；無選取時點空地仍可移動自己
 {const _t=tapAt;tapAt=function(x,y){try{
@@ -685,6 +699,7 @@ function xrcFriendAt(w){return unitAt(w,S.units,14)||(S.wand&&wandAt(w))||(S.npc
 function xrcClean(){if(!Array.isArray(selUnits)||!selUnits.length)return;const k=selUnits.filter(id=>!xrcOtherPc(unitById(id)));if(k.length!==selUnits.length){selUnits=k;XRC.uns++;}}
 {const _c=commandUnits;commandUnits=function(){let us=_c.apply(this,arguments);if(Array.isArray(us)&&us.some(xrcOtherPc)){us=us.filter(u=>!xrcOtherPc(u));if(!us.length){const sel=(selUnits||[]).map(unitById).filter(u=>u&&!u.dead);if(sel.length&&sel.every(xrcOtherPc))return [];const p=player();if(p&&!p.dead){us=[p];XRC.fb++;}}}return us;};}
 {const _r=rightClick;rightClick=function(x,y,sh){try{if(!S.interior&&!buildMode){const w=screenToWorld(x,y);
+      if(typeof xwStructHit==='function'&&xwStructHit(w)&&typeof xncCmd==='function'&&xncCmd(x,y))return;
       if(!enemyAt(w)&&!xncHostileS(structAt(w))&&!shrineAtScreen(x,y)&&xrcFriendAt(w)){xrcClean();const us=commandUnits();if(us.length){const t=tileAtWorld(w);
           commandMove(us,clamp(t.x,0.3,N-0.3),clamp(t.y,0.3,N-0.3),sh);XRC.mv++;return;}}}}catch(err){console.warn('xrc',err);}
   return _r.apply(this,arguments);};}

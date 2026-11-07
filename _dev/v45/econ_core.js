@@ -1734,7 +1734,7 @@ function econSectPanelHtml(){
   try{if(typeof xwSectPauseHtml==='function'){const h=xwSectPauseHtml();if(h)return h;}}catch(e){}
   const panes=[];
   try{const fh=typeof econFinanceHtml==='function'?econFinanceHtml({open:1,noToggle:1}):'';if(fh)panes.push(['fin','財務',fh]);}catch(e){}
-  try{const rh=typeof econRankFilterHtml==='function'?econRankFilterHtml():'';if(rh)panes.push(['rank','職位',rh]);}catch(e){}
+  try{const rh=typeof econRankFilterHtml==='function'?econRankFilterHtml(true):'';if(rh)panes.push(['rank','職位',rh]);}catch(e){}
   try{if(typeof econFlag==='function'&&econFlag('taskTiers')&&typeof econTaskListHtml==='function'){const th=econTaskListHtml(typeof xwTaskQuests==='function'?xwTaskQuests():[],typeof player==='function'?player():null);if(th)panes.push(['task','任務',th]);}}catch(e){}
   if(!panes.length)return '<div class="xwsect"><div class="gt">宗門事務</div><div class="dim sm">目前沒有可顯示的宗門事務。</div></div>';
   let h='<div class="x47g xwsect"><div class="gt">宗門事務</div><div class="xwsect-tb">';

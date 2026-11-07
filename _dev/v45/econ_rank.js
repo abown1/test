@@ -135,14 +135,16 @@ function econRankRosterHtml(){
   }
   return h+'</div>';
 }
-function econRankFilterHtml(){
+function econRankFilterHtml(withList){
   if(!econRankFlag('ranks'))return '';
   const st=econRankState(true);const cur=st&&st.filter||'all';
   let h='<div class="econ-rank-flt" id="econ-rank-flt"><span class="dim">職位</span> ';
   const btn=(id,name,on)=>'<button class="btn'+(on?' pri on':'')+'" data-econ-rank="'+id+'">'+name+'</button>';
   h+=btn('all','全部',cur==='all');
   for(const p of ECON_POSTS)h+=btn(p.id,p.name,cur===p.id);
-  return h+'</div>'+econRankRosterHtml();
+  h+='</div>';
+  if(withList)h+=econRankRosterHtml();
+  return h;
 }
 function econRankRowHtml(u,opt){
   opt=opt||{};
@@ -205,26 +207,43 @@ function econRankInjectRoster(){
   try{if(typeof rosterEl==='function')el=rosterEl();}catch(e){}
   if(!el&&typeof document!=='undefined')el=document.getElementById('roster')||document.querySelector('.roster');
   if(!el)return;
-  const bar=econRankFilterHtml();
+  // 總表只留篩選鈕。任命名冊若被塞進來，每半秒重畫整段，畫面就會閃。
+  el.querySelectorAll('#econ-rank-list').forEach(function(n){try{n.remove();}catch(e){}});
   let slot=el.querySelector('#econ-rank-flt');
   if(!slot){
+    const bar=econRankFilterHtml(false);
     const flt=el.querySelector('.rctl.flt');
     const wrap=document.createElement('div');
     wrap.innerHTML=bar;
-    if(flt&&flt.parentNode)flt.parentNode.insertBefore(wrap.firstChild,flt.nextSibling);
-    else el.insertAdjacentHTML('afterbegin',bar);
+    const node=wrap.firstChild;
+    if(node&&flt&&flt.parentNode)flt.parentNode.insertBefore(node,flt.nextSibling);
+    else if(node)el.insertBefore(node,el.firstChild);
     slot=el.querySelector('#econ-rank-flt');
-  }else if(slot.outerHTML!==bar){slot.outerHTML=bar;}
-  const st=econRankState(false);const f=st&&st.filter;
-  if(f&&f!=='all'){
-    const rows=el.querySelectorAll('.rrow');
-    rows.forEach(row=>{
-      const btn=row.querySelector('[data-u]');const id=btn&&+btn.getAttribute('data-u');
-      let u=null;try{if(typeof unitById==='function')u=unitById(id);}catch(e){}
-      if(!u&&S&&S.units)u=S.units.find(x=>x.id===id);
-      if(u&&econPostOf(u)!==f)row.style.display='none';
-    });
   }
+  const st=econRankState(false);const f=(st&&st.filter)||'all';
+  if(slot)slot.querySelectorAll('[data-econ-rank]').forEach(function(b){
+    const on=b.getAttribute('data-econ-rank')===f;
+    b.classList.toggle('on',on);b.classList.toggle('pri',on);
+  });
+  let shown=0;
+  el.querySelectorAll('.rrow').forEach(function(row){
+    const btn=row.querySelector('[data-u]');const id=btn&&+btn.getAttribute('data-u');
+    let u=null;try{if(typeof unitById==='function')u=unitById(id);}catch(e){}
+    if(!u&&S&&S.units)u=S.units.find(function(x){return x.id===id;});
+    const ok=f==='all'||(u&&econPostOf(u)===f);
+    row.style.display=ok?'':'none';
+    if(ok)shown++;
+  });
+  let note=el.querySelector('#econ-rank-empty');
+  if(f!=='all'&&!shown){
+    if(!note){
+      note=document.createElement('div');note.id='econ-rank-empty';note.className='dim';note.style.padding='10px';
+      const list=el.querySelector('.rlist');if(list)list.insertBefore(note,list.firstChild);else el.appendChild(note);
+    }
+    const label=f==='zhangmen'?'掌門由宗主擔任，弟子名冊裡沒有這個職位':'沒有擔任此職位的弟子';
+    if(note.textContent!==label)note.textContent=label;
+    note.style.display='';
+  }else if(note)note.style.display='none';
 }
 function econRankInstall(){
   try{
@@ -526,9 +545,9 @@ function econAppointClickInstall(){
       try{document.querySelectorAll('.econ-rank-flt [data-econ-rank]').forEach(b=>{const on=b.getAttribute('data-econ-rank')===post;b.classList.toggle('on',on);b.classList.toggle('pri',on);});}catch(e){}
       try{
         const box=document.getElementById('econ-rank-list');
-        if(box)box.outerHTML=econRankRosterHtml();
+        if(box&&!(typeof rosterEl==='function'&&rosterEl()&&rosterEl().contains(box)))box.outerHTML=econRankRosterHtml();
       }catch(e){}
-      try{if(typeof renderRoster==='function')renderRoster(true);}catch(e){}
+      try{econRankInjectRoster();}catch(e){}
       return;
     }
     const t=ev.target&&ev.target.closest&&ev.target.closest('[data-econ-appoint]');

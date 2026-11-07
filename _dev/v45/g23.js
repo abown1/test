@@ -2364,7 +2364,7 @@ function xwNewBuildHtml(){
 function xwSectPauseHtml(){
   const panes=[];
   try{const fh=typeof econFinanceHtml==='function'?econFinanceHtml({open:1,noToggle:1}):'';if(fh)panes.push(['fin','財務',fh]);}catch(e){}
-  try{const rh=typeof econRankFilterHtml==='function'?econRankFilterHtml():'';if(rh)panes.push(['rank','職位',rh]);}catch(e){}
+  try{const rh=typeof econRankFilterHtml==='function'?econRankFilterHtml(true):'';if(rh)panes.push(['rank','職位',rh]);}catch(e){}
   try{if(typeof econFlag==='function'&&econFlag('taskTiers')&&typeof econTaskListHtml==='function'){const th=econTaskListHtml(xwTaskQuests(),typeof player==='function'?player():null);if(th)panes.push(['task','任務',th]);}}catch(e){}
   try{const bh=xwNewBuildHtml();if(bh)panes.push(['bld','建築',bh]);}catch(e){}
   try{

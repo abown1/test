@@ -1762,7 +1762,9 @@ function y47BStrike(e){const B=y47BS();const atk=(e&&(e.atk||(ENEMY[e.type]||{})
 const XENL={cls:null,fr:0,hov:0,off:new WeakMap(),sepT:0};
 function xenlBase(e){try{const D=ENEMY[e.type];const rn=typeof v51RName==='function'?v51RName(e):((REALMS[e.realm]||{}).n||'');return(D&&D.n||e.type)+'・'+rn;}catch(er){return e.type||'?';}}
 function xenlBuild(){const g=new Map(),lookup=new WeakMap();
-  for(const e of S.enemies){if(!e||e.dead||e.hp<=0||e.inside)continue;let b={x:0,y:0};try{b=P(e.x,e.y);}catch(er){}
+  // 名牌只畫在畫面內。簇距是 2.2 格或 48 等角像素，畫面外再留 4 格就不會漏掉貼邊的鄰居。
+  let box=null;try{if(typeof viewTiles==='function'){const v=viewTiles();box={i0:v.i0-4,i1:v.i1+4,j0:v.j0-4,j1:v.j1+4};}}catch(err){}
+  for(const e of S.enemies){if(!e||e.dead||e.hp<=0||e.inside)continue;if(box&&(e.x<box.i0||e.x>box.i1||e.y<box.j0||e.y>box.j1))continue;let b={x:0,y:0};try{b=P(e.x,e.y);}catch(er){}
     const key=xenlBase(e);if(!g.has(key))g.set(key,[]);g.get(key).push({e,b,key});}
   const cls=[];for(const [key,arr] of g){arr.sort((a,b)=>a.e.x-b.e.x||a.e.y-b.e.y);const used=new Set();
     for(let i=0;i<arr.length;i++){if(used.has(i))continue;const cl={key,mem:[arr[i]],rep:arr[i].e};used.add(i);

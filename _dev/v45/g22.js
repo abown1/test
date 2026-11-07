@@ -737,7 +737,12 @@ function bb190Touch(){return document.body.classList.contains('touch');}
 function bb190Eff(){return BB190.col&&!bb190Touch()&&hasAny('hall');}// 還沒蓋宗門大殿（教學階段）時一律展開
 function bb190Set(v){BB190.col=!!v;XW_PREFS.set('bbcol',BB190.col?'1':'0');bb190Apply();}
 function bb190Key(){if(bb190Touch()||!hasAny('hall'))return false;bb190Set(!BB190.col);toast(BB190.col?'建造列已收合（按 B 或點「建造」展開）':'建造列已展開');return true;}
-function bb190TopB(tb){if(!tb||!tb.offsetParent)return 0;let m=tb.getBoundingClientRect().bottom;for(const e of tb.querySelectorAll('.grp,.res,button,span')){if(!e.offsetParent)continue;const r=e.getBoundingClientRect();if(r.height>0&&r.bottom>m&&r.top<innerHeight*0.3)m=r.bottom;}return m;}
+function bb190TopB(tb){if(!tb||!tb.offsetParent)return 0;
+  // 同一幀裡 y194Lay／banCorner／y48Lay 會反覆量頂欄。頂欄在這段同步讀取中不會變高，重用第一次的底緣。
+  const stamp=(typeof chunkFrame==='number'?chunkFrame:0)+':'+(performance.now()/16|0);
+  const c=bb190TopB._c;if(c&&c.tb===tb&&c.stamp===stamp)return c.v;
+  let m=tb.getBoundingClientRect().bottom;for(const e of tb.querySelectorAll('.grp,.res,button,span')){if(!e.offsetParent)continue;const r=e.getBoundingClientRect();if(r.height>0&&r.bottom>m&&r.top<innerHeight*0.3)m=r.bottom;}
+  bb190TopB._c={tb,stamp,v:m};return m;}
 function bb190Apply(){const bb=document.getElementById('buildbar');if(!bb)return;const t=bb190Touch(),col=bb190Eff(),open=t&&bb.classList.contains('open');
   if(open){try{const tb=document.getElementById('topbar'),tbb=bb190TopB(tb),r=bb.getBoundingClientRect(),mh=Math.max(160,Math.floor(r.bottom-tbb-14))+'px';if(bb.style.maxHeight!==mh)bb.style.maxHeight=mh;}catch(e){}}else if(bb.style.maxHeight)bb.style.maxHeight='';
   const k=(t?1:0)+'|'+(col?1:0)+'|'+(open?1:0);if(k===BB190.k)return;BB190.k=k;

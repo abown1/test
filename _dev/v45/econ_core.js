@@ -1766,7 +1766,21 @@ function econSectOpen(on){
     if(on==null)on=!el.classList.contains('open');
     if(on){
       const bd=document.getElementById('econ-sect-bd');
+      let tab=null,scroll=0;
+      if(bd){
+        scroll=bd.scrollTop||0;
+        const onBtn=bd.querySelector('.xwsect-tb [data-xwsect].on');
+        if(onBtn)tab=onBtn.getAttribute('data-xwsect');
+      }
       if(bd)bd.innerHTML=econSectPanelHtml();
+      if(tab&&bd){
+        const box=bd.querySelector('.xwsect');
+        if(box&&box.querySelector('.xwsect-tb [data-xwsect="'+tab+'"]')){
+          box.querySelectorAll('.xwsect-tb [data-xwsect]').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-xwsect')===tab);});
+          box.querySelectorAll('[data-xwsect-pane]').forEach(function(p){p.classList.toggle('on',p.getAttribute('data-xwsect-pane')===tab);});
+        }
+        bd.scrollTop=scroll;
+      }
       el.classList.add('open');
       const btn=document.getElementById('b_econsect');if(btn)btn.classList.add('on');
       try{

@@ -235,7 +235,7 @@ function mmShrines(k){mctx.textAlign='center';for(const s of shrines()){const p=
 
 // ---- 身隕與復甦 ----
 let deathOpen=false;
-function onPlayerDeath(u){u.dead=true;u.respawn=1e9;u.task=null;u.path=[];u.vx=u.vy=u.dvx=u.dvy=0;u.medit=false;u.deathAt={x:u.x,y:u.y};S.stats.deaths=(S.stats.deaths||0)+1;closeOverlays();closeShrine();setTimeout(()=>deathShow(true),700);}
+function onPlayerDeath(u){if(!u||(u.dead&&u.respawn>1e8))return;u.dead=true;u.respawn=1e9;u.task=null;u.path=[];u.vx=u.vy=u.dvx=u.dvy=0;u.medit=false;u.deathAt={x:u.x,y:u.y};S.stats.deaths=(S.stats.deaths||0)+1;closeOverlays();closeShrine();setTimeout(()=>deathShow(true),700);}
 function deathPenalty(){const p=player(),res={};for(const k of ['wood','stone','fiber','food','iron','herb','lingshi']){const v=Math.floor((S.res[k]||0)*0.2);if(v>0)res[k]=v;}return {xiu:Math.floor((p.xiu||0)*0.3),res};}
 function deathShow(on){deathOpen=on;const el=$('death');if(!on){el.classList.remove('open');return;}const p=player();const pen=deathPenalty();const rs=shrineById(S.flags.shr&&S.flags.shr.rs)||shrines()[0];
   const lost=Object.entries(pen.res).map(([k,v])=>(RES_NAMES[k]||k)+' '+v).join('、');

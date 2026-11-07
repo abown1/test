@@ -34,7 +34,11 @@ function enemyName(e){const D=ENEMY[e.type];return e.name?`${e.exd===1?'叛門�
 // ================== 訊息 ==================
 function toast(msg){const el=document.getElementById('toasts');const d=document.createElement('div');d.textContent=msg;el.appendChild(d);setTimeout(()=>d.remove(),isTouchUI?4500:6000);while(el.children.length>(isTouchUI?2:4))el.firstChild.remove();}
 function floater(x,y,text,col){if(floaters.length>60)floaters.shift();floaters.push({x,y,text,col:col||'#fff',t:0});}
-function fx(type,x,y,col,extra){effects.push(Object.assign({type,x,y,col,t:0,dur:type==='break'?1.4:0.5},extra||{}));}
+function fx(type,x,y,col,extra){
+  // 同一扇門短時間內只留一個光圈。進門仍會亮一次，人數徽章與窗光不在這裡。
+  if(type==='ring'){for(const e of effects){if(e.type==='ring'&&Math.abs(e.x-x)<0.4&&Math.abs(e.y-y)<0.4)return;}}
+  effects.push(Object.assign({type,x,y,col,t:0,dur:type==='break'?1.4:0.5},extra||{}));
+}
 function ping(x,y,danger){pings.push({x,y,t:0,dur:danger?8:4,danger:!!danger});}
 
 // ================== 移動：速度、加速度、平滑轉向、碰撞 ==================
@@ -82,7 +86,11 @@ function chase(o,dt,tx,ty,range,spMul){
   if(d<=range){o.dvx=o.dvy=0;o.path=[];return true;}
   if(o.repath<=0||!o.path.length||o.needRepath){o.repath=0.5+rnd()*0.3;
     if(d<12&&los(o.x,o.y,tx,ty,Math.max(0.3,(o.r||0.3)+0.02))){o.path=[{x:tx,y:ty}];o.needRepath=false;}else pathTo(o,tx,ty);}
-  else if(o.path.length===1){o.path[0]={x:tx,y:ty};}
+  else if(o.path.length===1){
+    const g=o.path[0];
+    if(Math.hypot((g.x||0)-tx,(g.y||0)-ty)>0.35&&typeof los==='function'&&!los(o.x,o.y,tx,ty,Math.max(0.3,(o.r||0.3)+0.02))){o.path=[];o.repath=0;}
+    else o.path[0]={x:tx,y:ty};
+  }
   followPath(o,dt,spMul);return false;
 }
 function approachRect(o,dt,i0,j0,s,reach){

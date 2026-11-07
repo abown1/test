@@ -250,12 +250,50 @@ function maybeWarn(u){
   return true;
 }
 
+function heroRebirth(u){
+  // 主角壽盡：坐化後把年齡收回起始歲，呼叫既有輪迴鉤子。不刪資產、不改境界、不走戰死介面。
+  if(!u||u.kind!=='player'||u.np)return {ok:false,reason:'not-hero'};
+  if(u.dead||(u.respawn||0)>1e8)return {ok:false,reason:'combat-death'};
+  const s=getS();
+  const stamp=Math.floor(((s&&s.time)||0)*10);
+  if(u.lifeSatStamp===stamp)return {ok:false,dup:true};
+  u.lifeSatStamp=stamp;
+  const age=ageOf(u),lifeMax=u.lifeMax;
+  if(typeof floater==='function')floater(u.x,u.y,'坐化','#d8c8ff');
+  if(typeof toast==='function')toast('你壽元已盡，坐化輪迴');
+  logMsg('你坐化輪迴（壽元已盡）');
+  emit('cult:lifeEnd',{id:u.id,why:'oldAge',name:u.name,realm:u.realm|0,age:age,lifeMax:lifeMax,zuohua:true,hero:true});
+  emit('cult:zuohua',{id:u.id,why:'oldAge',name:u.name,realm:u.realm|0,age:age,hero:true});
+  try{if(typeof CULT_LIFE_CFG.hooks.reincarnation==='function')CULT_LIFE_CFG.hooks.reincarnation({id:u.id,why:'oldAge',hero:true});}catch(e){}
+  u.lifeStartAge=CULT_LIFE_CFG.heroStartAge|0;
+  u.lifeAgedSec=0;
+  u.lifeWarn=0;
+  if(ageOf(u)>=(+u.lifeMax||0)-1e-9){
+    const start=Math.max(1,(+u.lifeMax||2)-1);
+    u.lifeStartAge=start;u.lifeAgedSec=0;
+  }
+  u.hp=Math.max(1,u.maxhp||u.hp||1);
+  u.task=null;u.path=[];u.dvx=u.dvy=0;u.vx=u.vy=0;u.medit=false;
+  if(!(s&&s.dg)){
+    try{
+      const c=typeof sectCenter==='function'?sectCenter():null;
+      if(c){
+        const f=typeof nearestFree==='function'?nearestFree(c.x,c.y,typeof unitComp==='function'?unitComp(u):-1):null;
+        u.x=f?f.i+0.5:c.x;u.y=f?f.j+0.5:c.y;
+        if(u.inside){u.inside=false;u.inB=null;}
+      }
+    }catch(e2){}
+  }
+  return {ok:true,kind:'zuohua',age:ageOf(u)};
+}
+
 function resolveLife(u){
   ensure(u);
   maybeWarn(u);
   if(u.lifeMax==null||!isFinite(+u.lifeMax))return;
   if(ageOf(u)>=(+u.lifeMax)-1e-9){
-    if(isPlayerChar(u)||u.np||u.kind==='player')applyHeroExpire(u);
+    if(u.kind==='player'&&!u.np)heroRebirth(u);
+    else if(isPlayerChar(u)||u.np)applyHeroExpire(u);
     else if(isDisciple(u))zuohua(u);
   }
 }
@@ -532,7 +570,7 @@ function install(){
   window._XW_LIFE_WRAP=1;
   ST._in=1;
   hookCheat();
-  const fields=['birthWorldYear','lifeAgedSec','lifeStartAge','lifeMax','lifeWarn','lifeConnected','cultLifeWeak','cultLifeSeclude','age','ascended'];
+  const fields=['birthWorldYear','lifeAgedSec','lifeStartAge','lifeMax','lifeWarn','lifeConnected','cultLifeWeak','cultLifeSeclude','age','ascended','lifeSatStamp'];
   try{if(typeof UNIT_KEEP!=='undefined'){for(const f of fields)if(UNIT_KEEP.indexOf(f)<0)UNIT_KEEP.push(f);}}catch(e){}
   try{if(window.XW&&Array.isArray(XW.UNIT_KEEP)){for(const f of fields)if(XW.UNIT_KEEP.indexOf(f)<0)XW.UNIT_KEEP.push(f);}}catch(e2){}
 

@@ -143,7 +143,7 @@ $('panel').addEventListener('click',ev=>{
   else if(act==='trade'){const o=selOtherObj();if(o)openTrade(o.vid);}
   else if(act==='goint'){const o=selOtherObj();if(o&&p&&!p.dead){setTask(p,{type:'interact',sid:o.vid!=null&&vById(o.vid)&&vById(o.vid).tradeId?vById(o.vid).tradeId:o.id});}}
   else if(act==='astruct'){const o=selOtherObj();const cu=commandUnits();cu.forEach(u=>{if(u.kind==='disciple')u.job=u.job==='guard'?null:u.job;setTask(u,{type:'astruct',sid:o.id});});}
-  else if(act==='atk'){const o=selOtherObj();commandUnits().forEach(u=>setTask(u,{type:'attack',eid:o.id,man:1}));}
+  else if(act==='atk'){const o=selOtherObj();commandUnits().forEach(u=>setTask(u,{type:'attack',eid:o.id,man:1,pack:xwAttackPack(o,u),ax:o.x,ay:o.y}));}
   panelKeyCache=null;
 });
 
@@ -286,7 +286,7 @@ function rightClick(mx,my,shift){
   {const sh=shrineAtScreen(mx,my);if(sh&&selUnits.includes((player()||{}).id)){goShrine(sh);return;}}
   const w=screenToWorld(mx,my),t=tileAtWorld(w),us=commandUnits();if(!us.length)return;
   const e=enemyAt(w);
-  if(e){us.forEach(u=>{setTask(u,{type:'attack',eid:e.id,man:1});});markers.push({x:e.x,y:e.y,t:0,col:'#ff5050'});return;}
+  if(e){us.forEach(u=>{setTask(u,{type:'attack',eid:e.id,man:1,pack:xwAttackPack(e,u),ax:e.x,ay:e.y});});markers.push({x:e.x,y:e.y,t:0,col:'#ff5050'});return;}
   const s=structAt(w);
   if(s){const v=vById(s.vid);
     if(v&&v.type==='bandit'&&s.maxhp){us.forEach(u=>setTask(u,{type:'astruct',sid:s.id}));markers.push({x:s.i+s.s/2,y:s.j+s.s/2,t:0,col:'#ff5050'});return;}
@@ -645,6 +645,7 @@ try{
     updateCamera._xwXtlIso=1;
   }
 }catch(e){}
+try{XW.setTask=setTask;XW.dgEnter=dgEnter;XW.dgExit=dgExit;XW.fx=fx;XW.enterBuildingUnit=enterBuildingUnit;XW.exitBuilding=exitBuilding;XW.moveEntity=moveEntity;XW.onPlayerDeath=onPlayerDeath;XW.effectCount=function(){return effects.length;};XW.blockAt=function(i,j,v){const k=j*N+i;const prev=block[k];if(v!=null)block[k]=v;return prev;};}catch(e){}
 
 })();
 </script>

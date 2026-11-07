@@ -98,8 +98,25 @@
     }
     if(st.v==null)st.v=ECON_WPRI_VER;
     if(!st.sort)st.sort='realm';
+    if(!st.post)st.post='all';
     if(!st.rows||typeof st.rows!=='object')st.rows={};
     return st;
+  }
+  function postChoices(){
+    const out=[{id:'all',name:'全部'}];
+    try{
+      if(typeof ECON_POSTS!=='undefined'&&ECON_POSTS){
+        for(let i=0;i<ECON_POSTS.length;i++)out.push({id:ECON_POSTS[i].id,name:ECON_POSTS[i].name});
+        return out;
+      }
+    }catch(e){}
+    [['zhangmen','掌門'],['zhanglao','長老'],['zhifa','執法'],['waishi','外事'],['neimen','內門'],['waimen','外門'],['zayi','雜役']].forEach(function(p){out.push({id:p[0],name:p[1]});});
+    return out;
+  }
+  function setPost(id){
+    const st=ensureState();if(!st)return;
+    const ok=postChoices().some(function(p){return p.id===id;});
+    st.post=ok?id:'all';
   }
   function keyOf(u){return String(u&&u.id!=null?u.id:'');}
   function editedRow(u){
@@ -173,6 +190,17 @@
     });
     return list;
   }
+  function filterPost(u){
+    try{if(typeof econPostOf==='function')return econPostOf(u)||'';}catch(e){}
+    return (u&&(u.office||u.econOffice))||'';
+  }
+  function shownList(){
+    const list=discipleList();
+    const st=ensureState();
+    const post=st&&st.post||'all';
+    if(!post||post==='all')return list;
+    return list.filter(function(u){return filterPost(u)===post;});
+  }
   function setSort(k){
     const st=ensureState();if(!st)return;
     st.sort=k==='name'||k==='rank'||k==='realm'?k:'realm';
@@ -234,15 +262,21 @@
     return {v:v, label:lab, edited:ed};
   }
   function gridHtml(){
-    const list=discipleList();
+    const list=shownList();
     const st=ensureState();
     const sort=st&&st.sort||'realm';
+    const post=st&&st.post||'all';
     let h='<div class="econ-wpri" id="econ-wpri">';
     h+='<div class="econ-wpri-hd">差事優先</div>';
     h+='<div class="econ-wpri-hint">左鍵循環 1→4→關，右鍵反向；數字愈小愈先派遣。欄名可整欄設定。未改過的弟子仍依職階舊規。手令與奉命鎖優先。</div>';
     h+='<div class="econ-wpri-sort">排列';
     [['name','名字'],['rank','職位'],['realm','境界']].forEach(function(it){
       h+='<button type="button" class="btn'+(sort===it[0]?' on':'')+'" data-wpri-sort="'+it[0]+'">'+it[1]+'</button>';
+    });
+    h+='</div>';
+    h+='<div class="econ-wpri-post">職位';
+    postChoices().forEach(function(p){
+      h+='<button type="button" class="btn'+(post===p.id?' on':'')+'" data-wpri-post="'+p.id+'">'+esc(p.name)+'</button>';
     });
     h+='</div>';
     if(!list.length){
@@ -306,12 +340,16 @@
     return null;
   }
   function onAct(ev,rev){
-    const t=ev.target&&ev.target.closest&&ev.target.closest('[data-wpri-cell],[data-wpri-col],[data-wpri-sort]');
+    const t=ev.target&&ev.target.closest&&ev.target.closest('[data-wpri-cell],[data-wpri-col],[data-wpri-sort],[data-wpri-post]');
     if(!t)return false;
     ev.preventDefault();
     try{ev.stopPropagation();}catch(e){}
     if(t.hasAttribute('data-wpri-sort')){
       setSort(t.getAttribute('data-wpri-sort'));
+      paint();return true;
+    }
+    if(t.hasAttribute('data-wpri-post')){
+      setPost(t.getAttribute('data-wpri-post'));
       paint();return true;
     }
     if(t.hasAttribute('data-wpri-col')){

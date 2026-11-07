@@ -266,6 +266,8 @@ cultAfterDmgUnit=function(src,u,st){
 cultHandlePlayerDeath=function(u,_pd){
   if(!CULT_FLAGS.death||!u)return false;
   if(typeof cultCoopActive==='function'&&cultCoopActive()&&cultCoopAvatar(u))return false;
+  // 主角未到元嬰：戰死走原本的身隕重生，不改成重傷逃走，也不在這裡坐化。
+  if(u.kind==='player'&&!u.np&&!(typeof cultIsYuanYing==='function'&&cultIsYuanYing(u)))return false;
   if(u.cultYSGone){u.cultYSGone=0;return false;} // 元神已滅，走原身隕
   if(!cultIsYuanYing(u)){
     cultApplyWound(u,'combat');

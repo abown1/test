@@ -66,7 +66,7 @@ TUNE.dgKeepFail=0.2;TUNE.dgCh=5;
 function dgLootList(L){const a=[];if(!L)return a;for(const k in L.res)if(L.res[k])a.push([cname(k),L.res[k]]);for(const k in L.mats)if(L.mats[k])a.push([cname(k),L.mats[k]]);
   if(L.items.length)a.push(['裝備',L.items.length]);if(L.misc.miji)a.push(['秘籍',L.misc.miji]);if(L.misc.gongfa)a.push(['功法',L.misc.gongfa]);if(L.misc.xfl)a.push(['仙凡令',1]);if(L.misc.rec)a.push(['丹方殘頁',L.misc.rec]);return a;}
 function dgChT(){return perkOn('xy')?3.5:TUNE.dgCh;}
-{const _x=dgExit;dgExit=function(keep){const D=S.dg;if(!D||keep)return _x(keep);
+{const _x=dgExit;dgExit=function(keep){const D=S.dg;if(!D||keep||D.kind==='xf')return _x(keep);
   // 失敗：保留約 20%（無法帶出秘籍／功法／仙凡令）
   const L=D.loot,sv={res:{},mats:{},items:[]};for(const k in L.res)sv.res[k]=Math.floor(L.res[k]*TUNE.dgKeepFail);for(const k in L.mats)sv.mats[k]=Math.floor(L.mats[k]*TUNE.dgKeepFail+(rnd()<(L.mats[k]*TUNE.dgKeepFail)%1?1:0));
   for(const it of L.items)if(rnd()<TUNE.dgKeepFail)sv.items.push(it);

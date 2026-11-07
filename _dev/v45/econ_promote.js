@@ -310,8 +310,15 @@
         document.addEventListener('click',function(ev){
           const t=ev.target&&ev.target.closest&&ev.target.closest('[data-econ-pr]');
           if(!t)return;
+          ev.preventDefault();
+          try{ev.stopPropagation();}catch(e0){}
           const act=t.getAttribute('data-econ-pr');
           const id=+t.getAttribute('data-u');
+          const stamp=act+':'+id;
+          const nowMs=Date.now();
+          document._econPrAt=document._econPrAt||{};
+          if(document._econPrAt[stamp]&&nowMs-document._econPrAt[stamp]<400)return;
+          document._econPrAt[stamp]=nowMs;
           if(act==='trial'){
             const T=typeof S!=='undefined'?S:null;
             const u=T&&T.units&&T.units.find(function(x){return x&&x.id===id;});

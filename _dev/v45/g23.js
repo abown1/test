@@ -622,7 +622,7 @@ function xncHostileS(s){if(!s||s.dead||!s.maxhp)return false;const v=vById(s.vid
 function xncCmd(x,y){if(S.interior||buildMode||S.dg)return false;const w=screenToWorld(x,y),e=enemyAt(w),u=unitAt(w,S.units,14);
   if(e){const pe=iso(e.x,e.y),de=dist(w.x,w.y,pe.x,pe.y-10);let du=1e9;if(u){const pu=iso(u.x,u.y);du=dist(w.x,w.y,pu.x,pu.y-14);}
     // 點偏一點仍優先鎖敵（單位需明顯更近才改選單位）
-    if(!u||de<=du+12){const us=commandUnits();if(!us.length)return false;us.forEach(v=>setTask(v,{type:'attack',eid:e.id,man:1}));markers.push({x:e.x,y:e.y,t:0,col:'#ff5050'});XNC.atk++;return true;}}
+    if(!u||de<=du+12){const us=commandUnits();if(!us.length)return false;us.forEach(v=>setTask(v,{type:'attack',eid:e.id,man:1,pack:xwAttackPack(e,v),ax:e.x,ay:e.y}));markers.push({x:e.x,y:e.y,t:0,col:'#ff5050'});XNC.atk++;return true;}}
   if(!u){const s=structAt(w);if(xncHostileS(s)){const us=commandUnits();if(!us.length)return false;us.forEach(v=>setTask(v,{type:'astruct',sid:s.id}));markers.push({x:s.i+s.s/2,y:s.j+s.s/2,t:0,col:'#ff5050'});XNC.str++;return true;}}
   return false;}
 // 短點不攻擊（觀察由 tapAt／leftClick 處理）；無選取時點空地仍可移動自己
@@ -1784,7 +1784,10 @@ function xenlSeparate(){
   for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){
     const a=L[i],b=L[j];const d=dist(a.x,a.y,b.x,b.y);if(d>0.85||d<1e-6)continue;
     const push=(0.85-d)*0.5,ux=(b.x-a.x)/d,uy=(b.y-a.y)/d;
+    const ax=a.x,ay=a.y,bx=b.x,by=b.y;
     a.x-=ux*push;a.y-=uy*push;b.x+=ux*push;b.y+=uy*push;
+    if(typeof collideTiles==='function'){collideTiles(a);collideTiles(b);}
+    if(typeof blockedP==='function'){if(blockedP(a.x,a.y)){a.x=ax;a.y=ay;}if(blockedP(b.x,b.y)){b.x=bx;b.y=by;}}
   }
 }
 {const _d=draw;draw=function(){XENL.cls=null;XENL.fr++;try{if(S&&S.enemies&&!S.interior){xenlBuild();xenlSeparate();}}catch(e){}return _d.apply(this,arguments);};}

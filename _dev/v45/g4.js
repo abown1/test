@@ -58,7 +58,39 @@ function doBreak(u){
 }
 
 // ================== 指令與任務 ==================
-function setTask(u,t){if(u.inside)exitBuilding(u);u.task=t;u.prevTask=null;u.path=[];u.repath=0;u.medit=false;u.needRepath=false;}
+function setTask(u,t){
+  // 館內弟子若仍做著這棟建築的事，內部清任務不再先踢到門口再立刻走回去。
+  // 玩家的移動、攻擊、採集、建造、修繕仍立刻離館。
+  let keep=false;
+  if(u&&u.inside&&u.inB!=null){
+    const order=t&&(t.man||t.type==='move'||t.type==='attack'||t.type==='gather'||t.type==='build'||t.type==='repair'||t.type==='astruct'||t.type==='interact'||t.type==='enter');
+    if(!order){
+      const b=bById(u.inB);
+      const spec=u.job&&typeof INJOB!=='undefined'&&INJOB[u.job];
+      if(b&&spec&&spec.b===b.type)keep=true;
+    }
+  }
+  if(u&&u.inside&&!keep)exitBuilding(u);
+  u.task=t;u.prevTask=null;u.path=[];u.repath=0;u.medit=false;u.needRepath=false;
+}
+function xwFoe(e){
+  if(!e||e.dead||!(e.hp>0))return false;
+  if(!ENEMY[e.type])return false;
+  if(e.type==='militia'){const v=vById(e.camp);if(!v||vStatus(v)!=='hostile')return false;}
+  return true;
+}
+function xwAttackPack(e,u){
+  const ids=[e.id],R=8,CAP=6,LEASH=12,list=[];
+  for(const o of (S.enemies||[])){
+    if(o===e||!xwFoe(o))continue;
+    if(dist(o.x,o.y,e.x,e.y)>R)continue;
+    if(u&&dist(o.x,o.y,u.x,u.y)>LEASH)continue;
+    list.push(o);
+  }
+  list.sort((a,b)=>dist(a.x,a.y,e.x,e.y)-dist(b.x,b.y,e.x,e.y));
+  for(const o of list){if(ids.length>=CAP)break;ids.push(o.id);}
+  return ids;
+}
 function assignJob(u,job,arg){
   if(!u||u.kind!=='disciple')return false;
   // 務農也走共用指派管線，讓玩家手令／自動指派鎖與睡眠取消一致。
@@ -148,10 +180,19 @@ function updatePlayer(u,dt){
 function runTask(u,dt,t){
   if(t.type==='move'){if(u.needRepath&&u.stuck<4){pathTo(u,t.x!=null?t.x:u.path.length?u.path[u.path.length-1].x:u.x,t.y!=null?t.y:u.path.length?u.path[u.path.length-1].y:u.y);}
     if(!followPath(u,dt)||u.stuck>=8){u.task=null;u.dvx=u.dvy=0;if(u.kind==='player'&&u.queue&&u.queue.length){const q=u.queue.shift();setTask(u,{type:'move',x:q.x,y:q.y});pathTo(u,q.x,q.y);}}return;}
-  if(t.type==='attack'){const e=enemyById(t.eid);
-    // BATCH2100_FAR_ATK：手動鎖定（右鍵／明確攻擊）可遠距追擊；自動接戰仍用 18 格牽繩
+  if(t.type==='attack'){let e=enemyById(t.eid);
+    if(t.man&&t.pack&&(!e||e.dead||!(e.hp>0))){
+      const ax=t.ax!=null?t.ax:u.x,ay=t.ay!=null?t.ay:u.y;
+      for(const id of t.pack){
+        const o=enemyById(id);
+        if(!xwFoe(o))continue;
+        if(dist(o.x,o.y,ax,ay)>10||dist(u.x,u.y,o.x,o.y)>14)continue;
+        t.eid=o.id;e=o;break;
+      }
+    }
+    // BATCH2100_FAR_ATK：手動鎖定（右鍵／明確攻擊）可遠距追擊；自動接戰仍用 18 格牽繩。周圍敵人只在點選點附近接上。
     const leash=t.man?80:18;
-    if(!e||dist(u.x,u.y,e.x,e.y)>leash){u.task=u.prevTask||null;u.prevTask=null;u.path=[];return;}fightStep(u,dt,e);return;}
+    if(!e||e.dead||!(e.hp>0)||dist(u.x,u.y,e.x,e.y)>leash){u.task=u.prevTask||null;u.prevTask=null;u.path=[];return;}fightStep(u,dt,e);return;}
   if(t.type==='astruct'){const s=sById(t.sid);if(!s||s.dead){u.task=null;return;}
     const r=approachRect(u,dt,s.i,s.j,s.s,0.75);if(r===null){u.task=null;return;}if(!r)return;faceTo(u,s.i+s.s/2,s.j+s.s/2);if(u.cd<=0){dmgStruct(u,s,u.atk*(0.9+rnd()*0.2));u.cd=1;u.anim=0.25;}return;}
   if(t.type==='build'){const b=bById(t.bid);if(!b||(b.built&&!b.upg)){u.task=null;return;}buildStep(u,dt,b);return;}

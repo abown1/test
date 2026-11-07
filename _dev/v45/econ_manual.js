@@ -50,6 +50,17 @@
     try{if(u.thought==='💦')return true;}catch(e){}
     return false;
   }
+  function safetyLeave(u){
+    if(defending(u)||wounded(u))return true;
+    const k=u&&u.aiJob&&u.aiJob.k;
+    return k==='eat'||k==='rest'||k==='med';
+  }
+  function placeDead(u){
+    const job=u&&u.manualJob;
+    const spec=typeof INJOB!=='undefined'&&job&&INJOB[job];
+    if(!spec||!spec.b||!S||!S.buildings)return false;
+    return !S.buildings.some(function(b){return b&&b.type===spec.b&&b.built&&!b.broken;});
+  }
   function snapshot(u){
     let ga=null,ha=null;
     try{if(u.guardAt)ga={x:u.guardAt.x,y:u.guardAt.y};}catch(e){}
@@ -76,7 +87,15 @@
     return lock(u,'stand',null);
   }
   function restore(u){
-    if(!isLocked(u)||defending(u)||wounded(u))return false;
+    if(!isLocked(u)||safetyLeave(u))return false;
+    if(placeDead(u)){
+      try{if(typeof toast==='function'&&!u._manGone)toast((u.name||'弟子')+' 的場所已失效，手令解除');}catch(e){}
+      u._manGone=1;clearLock(u);return false;
+    }
+    if((u.stuck||0)>8&&u.manualKind==='move'&&!(u.task&&u.task.type==='attack')){
+      try{if(typeof toast==='function')toast((u.name||'弟子')+' 走不到，手令解除');}catch(e){}
+      clearLock(u);return false;
+    }
     const kind=u.manualKind, job=u.manualJob, snap=u.manualSnap||{};
     try{
       if(kind==='stand'||(kind!=='move'&&kind!=='build'&&kind!=='repair'&&kind!=='attack'&&(job==null||job===''))){
@@ -242,7 +261,7 @@
         const _as=aiStart;
         aiStart=function(u,k){
           if(isLocked(u)){
-            if(wounded(u)&&(k==='rest'||k==='med'))return _as.apply(this,arguments);
+            if(k==='rest'||k==='med'||k==='eat')return _as.apply(this,arguments);
             return;
           }
           return _as.apply(this,arguments);
@@ -288,7 +307,16 @@
         const _ud=updateDisciple;
         updateDisciple=function(u,dt){
           const r=_ud.apply(this,arguments);
-          try{if(isLocked(u)&&!defending(u))restore(u);}catch(e){}
+          try{
+            if(isLocked(u)&&!safetyLeave(u)){
+              const hungry=!u.dead&&(u.hunger||0)>65&&S&&S.res&&S.res.food>=2&&typeof hasBuilt==='function'&&hasBuilt('shitang')&&!(typeof y47Bigu==='function'&&y47Bigu(u));
+              const hurt=!u.dead&&u.maxhp&&u.hp<u.maxhp*0.35;
+              if((hungry||hurt)&&typeof aiStart==='function'){
+                u.job=null;u.task=null;u.path=[];
+                aiStart(u,hungry?'eat':'rest');
+              }else restore(u);
+            }else if(isLocked(u))restore(u);
+          }catch(e){}
           return r;
         };
         updateDisciple._econManual=1;

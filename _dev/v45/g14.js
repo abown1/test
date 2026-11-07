@@ -173,7 +173,7 @@ function radialOpts(x,y){const w=screenToWorld(x,y),sel=selUnits.map(unitById).f
   const p=player();const o=[];
   const u=unitAt(w,S.units,14);if(u&&u.kind==='player'){o.push(['跟隨','🚶',()=>{ds.forEach(d=>assignJob(d,'follow'));toast(`${ds.length} 人跟隨你`);}]);o.push(['守衛','🛡',()=>{ds.forEach(d=>{assignJob(d,'guard');d.guardAt={x:u.x,y:u.y};});}]);o.push(['選自己','👤',()=>{selUnits=[u.id];}]);return o;}
   if(u)return null;
-  const e=enemyAt(w);if(e){o.push(['攻擊','⚔',()=>{sel.forEach(v=>setTask(v,{type:'attack',eid:e.id,man:1}));markers.push({x:e.x,y:e.y,t:0,col:'#ff5050'});}]);}
+  const e=enemyAt(w);if(e){o.push(['攻擊','⚔',()=>{sel.forEach(v=>setTask(v,{type:'attack',eid:e.id,man:1,pack:xwAttackPack(e,v),ax:e.x,ay:e.y}));markers.push({x:e.x,y:e.y,t:0,col:'#ff5050'});}]);}
   const s=!e&&structAt(w);if(s){if(s.type==='dgate')o.push(['進入','🌀',()=>{selOther={k:'s',id:s.id};selUnits=[];}]);else{const v=vById(s.vid);if(v&&v.type==='bandit'&&s.maxhp)o.push(['攻擊','⚔',()=>sel.forEach(q=>setTask(q,{type:'astruct',sid:s.id}))]);else o.push(['前往','➡',()=>_rcOrig(x,y,false)]);}}
   const n=!e&&!s&&nodeAt(w);if(n){o.push(['採集','⛏',()=>_rcOrig(x,y,false)]);}
   const b=!e&&!s&&!n&&buildingAt(w);if(b){if(!b.built||b.upg)o.push(['施工','🔨',()=>ds.forEach(d=>setTask(d,{type:'build',bid:b.id}))]);else if(b.hp<b.maxhp)o.push(['修繕','🔧',()=>ds.forEach(d=>setTask(d,{type:'repair',bid:b.id}))]);

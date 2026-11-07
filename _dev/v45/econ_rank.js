@@ -108,6 +108,33 @@ function econRankSetFilter(postId){
   const st=econRankState(true);if(!st)return 'all';
   st.filter=postId||'all';return st.filter;
 }
+function econRankShown(postId){
+  const units=(typeof S!=='undefined'&&S&&S.units)||[];
+  const cur=postId||'all';
+  return units.filter(function(u){
+    if(!u||u.dead)return false;
+    if(u.kind!=='disciple'&&u.kind!=='player')return false;
+    if(cur==='all')return true;
+    if(cur==='zhangmen')return u.kind==='player'||econPostOf(u)==='zhangmen';
+    if(u.kind==='player')return false;
+    return econPostOf(u)===cur;
+  });
+}
+function econRankRosterHtml(){
+  const st=econRankState(true);const cur=st&&st.filter||'all';
+  const list=econRankShown(cur);
+  let h='<div class="econ-rank-list" id="econ-rank-list">';
+  if(!list.length)h+='<div class="dim sm">沒有擔任此職位的人</div>';
+  for(const u of list){
+    let name=u.name||('弟子'+u.id);
+    try{if(typeof pnm==='function')name=pnm(u);}catch(e){}
+    const post=u.kind==='player'&&cur!=='all'&&(cur==='zhangmen'||cur==='all')?'掌門':((econPostById(econPostOf(u))||{}).name||(u.kind==='player'?'宗主':'無職'));
+    const realm=(typeof REALMS!=='undefined'&&REALMS[u.realm]&&REALMS[u.realm].n)||'';
+    h+='<div class="econ-rank-row"><b>'+name+'</b> · '+post+(realm?' · '+realm:'')+'</div>';
+    if(u.kind==='disciple'){try{h+=econRankRowHtml(u);}catch(e){}}
+  }
+  return h+'</div>';
+}
 function econRankFilterHtml(){
   if(!econRankFlag('ranks'))return '';
   const st=econRankState(true);const cur=st&&st.filter||'all';
@@ -115,7 +142,7 @@ function econRankFilterHtml(){
   const btn=(id,name,on)=>'<button class="btn'+(on?' pri on':'')+'" data-econ-rank="'+id+'">'+name+'</button>';
   h+=btn('all','全部',cur==='all');
   for(const p of ECON_POSTS)h+=btn(p.id,p.name,cur===p.id);
-  return h+'</div>';
+  return h+'</div>'+econRankRosterHtml();
 }
 function econRankRowHtml(u,opt){
   opt=opt||{};
@@ -497,6 +524,10 @@ function econAppointClickInstall(){
       ev.preventDefault();ev.stopPropagation();
       const post=econRankSetFilter(f.getAttribute('data-econ-rank'));
       try{document.querySelectorAll('.econ-rank-flt [data-econ-rank]').forEach(b=>{const on=b.getAttribute('data-econ-rank')===post;b.classList.toggle('on',on);b.classList.toggle('pri',on);});}catch(e){}
+      try{
+        const box=document.getElementById('econ-rank-list');
+        if(box)box.outerHTML=econRankRosterHtml();
+      }catch(e){}
       try{if(typeof renderRoster==='function')renderRoster(true);}catch(e){}
       return;
     }

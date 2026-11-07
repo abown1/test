@@ -11,9 +11,10 @@ const CFG={
   judgeCd:2.5,             // 待確認：再判定間隔秒
   retreatHp:0.22,          // 待確認：強制撤退血量
   sparR:2.8,               // 待確認：試煉場切磋距離
-  sparCd:12,               // 待確認：切磋冷卻秒
+  sparCd:36,               // 待確認：原 12 遊戲秒。沒有玩家指定的目標頻率，先保守降為 3 倍，仍走 S.time（已含遊戲速度）
+  sparScan:4,              // 待確認：整場掃描間隔（遊戲秒）。原為每個 Cult.tick 都掃
   sparExp:8,               // 待確認：切磋戰鬥經驗（dualExp 開啟才入帳）
-  sparDmg:0.08             // 待確認：切磋單次傷害＝氣血上限比（非致命）
+  sparDmg:0.08             // 待確認：既有非致命扣血，本次不提高、不另加
 };
 window.CULT_JUDGE_CFG=CFG;
 function cjDisc(u){if(!u||u.dead)return false;try{if(window.Cult&&typeof Cult.isPlayerChar==='function'&&Cult.isPlayerChar(u))return false;}catch(ex){}if(u.kind==='player'||u.np)return false;return u.kind==='disciple';}
@@ -127,9 +128,11 @@ function cjNearYard(u){
   if(best&&best.d<=CFG.sparR+1.2)return best;
   return null;
 }
+function cjManual(u){return !!(u&&u.manualUntil!=null&&isFinite(+u.manualUntil)&&(S.time||0)<+u.manualUntil);}
 function cjSparPair(a,b){
   if(!cjOn('sparring')||!cjDisc(a)||!cjDisc(b))return false;
   if(a===b||a.hp<=1||b.hp<=1)return false;
+  if(cjManual(a)||cjManual(b))return false;
   const now=S.time||0;
   if((a._sparT||0)>now||(b._sparT||0)>now)return false;
   if(!cjNearYard(a)||!cjNearYard(b))return false;
@@ -149,6 +152,9 @@ function cjSparPair(a,b){
 function cjTick(dt){
   if(!S||!S.units)return;
   if(!cjOn('sparring'))return;
+  const now=S.time||0;
+  if(now<(cjTick._next||0))return;
+  cjTick._next=now+(CFG.sparScan||4);
   const yards=[];
   for(const b of (S.buildings||[])){
     if(!b||b.broken)continue;

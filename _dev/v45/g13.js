@@ -36,6 +36,24 @@ function dgatePanel(o){const G=DGS[o.kind],p=player(),cd=(S.dgCd[o.kind]||0)-S.t
   ${lock?'<div class="no">✖ 你需達到「宗師」才能叩問仙凡之門</div>':cd>0?`<div class="no">冷卻中：${Math.ceil(cd)} 秒</div>`:`<div class="jobs"><button class="btn pri" data-act="dgo" data-k="${o.kind}" data-p="all">帶全部弟子（${ds.length}）</button><button class="btn" data-act="dgo" data-k="${o.kind}" data-p="sel">帶選取／跟隨的（${new Set(sel.concat(fol)).size}）</button><button class="btn" data-act="dgo" data-k="${o.kind}" data-p="solo">獨自進入</button><button class="btn warn" data-act="dgo" data-k="${o.kind}" data-p="all" data-h="1">困難＋全員</button></div>`}
   <div class="phint">通關次數 ${S.dgClears||0}　你須走到入口旁（3 格內）才能進入</div>`;}
 // ---- 進入／離開 ----
+function xfBagSnap(){
+  const ids={};
+  const mark=it=>{if(it&&it.id!=null)ids[it.id]=1;};
+  try{(S.inv||[]).forEach(mark);}catch(e){}
+  try{(S.units||[]).forEach(u=>{if(!u||!u.eq)return;for(const k in u.eq)mark(u.eq[k]);});}catch(e2){}
+  return {res:dgClone(S.res),mats:dgClone(S.mats),items:dgClone(S.items),inv:dgClone(S.inv||[]),pills:S.pills?dgClone(S.pills):null,ids:ids};
+}
+function xfBagRestore(bag){
+  if(!bag||!bag.res||!bag.items)return false;
+  S.res=dgClone(bag.res);S.mats=dgClone(bag.mats||{});S.items=dgClone(bag.items);S.inv=dgClone(bag.inv||[]);
+  if(bag.pills)S.pills=dgClone(bag.pills);
+  const ids=bag.ids||{};
+  for(const u of (S.units||[])){
+    if(!u||!u.eq)continue;
+    for(const k in u.eq){const it=u.eq[k];if(it&&it.id!=null&&!ids[it.id])u.eq[k]=null;}
+  }
+  return true;
+}
 function dgEnter(kind,mode,hard){const p=player();if(!p||p.dead||S.dg||S.interior)return false;const G=DGS[kind];
   if(G.xf&&p.realm<3){toast('你需達到「宗師」才能叩問仙凡之門');return false;}
   if((S.dgCd[kind]||0)>S.time){toast('入口的靈氣尚未平復（冷卻中）');return false;}
@@ -52,6 +70,7 @@ function dgEnter(kind,mode,hard){const p=player();if(!p||p.dead||S.dg||S.interio
   const st=L.rooms[0];startComp=comp[Math.floor(st.cy)*N+Math.floor(st.cx)];
   S.units.forEach((u,k)=>{const f=nearestFree(st.cx+(k%5-2)*0.7,st.cy+Math.floor(k/5)*0.7-1,-1)||{i:Math.floor(st.cx),j:Math.floor(st.cy)};u.x=f.i+0.5;u.y=f.j+0.5;u.vx=u.vy=0;});
   S.dg={kind,hard:!!hard,tier:dgTier(kind,hard),L,W,pre,loot:{res:{},mats:{},items:[],misc:{}},t:0,room:0,cleared:false,end:null,ent:{x:st.cx,y:st.cy-1.4},armed:false,party:S.units.length,boss:null,mech:{t:5,marks:[]},summon:[0.7,0.4],queue:[],down:0,lost:0};
+  if(kind==='xf')S.dg.bag0=xfBagSnap();
   const q=iso(p.x,p.y);cam.x=q.x;cam.y=q.y;cam.follow=true;selUnits=[p.id];selBuilding=null;selOther=null;panelKeyCache=null;
   toast(`進入「${G.n}」${hard?'（困難）':''}！帶了 ${party.length} 名弟子。走進每個房間會引出敵人，打倒最深處的首領即可通關`);
   document.body.classList.add('indg');return true;}
@@ -112,7 +131,12 @@ function dgExit(keep){const D=S.dg;if(!D)return;const W=D.W,p=player();
   projectiles=W.proj;effects=W.eff;block.set(W.block);comp.set(W.comp);for(let k=0;k<N*N;k++){occ[k]=W.occ[k];nodeGrid[k]=W.ng[k];}explored.set(W.exp);startComp=W.startComp;
   cam.x=W.cam.x;cam.y=W.cam.y;cam.zoom=W.cam.zoom;cam.follow=true;S.dg=null;document.body.classList.remove('indg');
   S.dgCd[D.kind]=S.time+TUNE.dgCooldown;selUnits=p?[p.id]:[];selOther=null;panelKeyCache=null;
-  let got=[];if(keep){const L=D.loot;for(const k in L.res){S.res[k]+=L.res[k];got.push(cname(k)+' '+L.res[k]);}for(const k in L.mats){S.mats[k]+=L.mats[k];got.push(cname(k)+' '+L.mats[k]);}
+  const xfFail=D.kind==='xf'&&!D.cleared;
+  if(xfFail){
+    if(D.bag0)xfBagRestore(D.bag0);
+    else try{toast('仙凡之門這次沒有入場物品快照，已拒絕結算本次戰利品；入場前已在身上的東西不會整包清掉');}catch(e){}
+  }
+  let got=[];if(keep&&!xfFail){const L=D.loot;for(const k in L.res){S.res[k]+=L.res[k];got.push(cname(k)+' '+L.res[k]);}for(const k in L.mats){S.mats[k]+=L.mats[k];got.push(cname(k)+' '+L.mats[k]);}
     for(const it of L.items){addItem(it);got.push(itemName(it));}
     if(L.misc.miji){S.items.miji+=L.misc.miji;got.push('武學秘籍');}if(L.misc.gongfa){S.items.gongfa+=L.misc.gongfa;got.push('功法');}if(L.misc.xfl){S.items.xfl=(S.items.xfl||0)+1;got.push('仙凡令');}
     for(let k=0;k<(L.misc.rec||0);k++)if(learnRecipe(null,'副本殘頁'))got.push('丹方');
@@ -188,7 +212,7 @@ function dgRestoreLive(D,d){
 function dgToSave(D){
   if(!D)return null;
   const o={kind:D.kind,hard:!!D.hard,tier:D.tier,t:D.t,cleared:!!D.cleared,loot:dgClone(D.loot),party:D.party,runId:D.runId,_map:!!D._map,
-    mapType:D.mapType,end:D.end,armed:!!D.armed,down:D.down,lost:D.lost,ent:dgClone(D.ent),exitP:dgClone(D.exitP),exitOpen:!!D.exitOpen,forceBoss:!!D.forceBoss};
+    mapType:D.mapType,end:D.end,armed:!!D.armed,down:D.down,lost:D.lost,ent:dgClone(D.ent),exitP:dgClone(D.exitP),exitOpen:!!D.exitOpen,forceBoss:!!D.forceBoss,bag0:D.bag0?dgClone(D.bag0):null};
   if(!(typeof mapDgAreaCoopLive==='function'&&mapDgAreaCoopLive())){o.live={fmt:1,units:dgPersist(S.units),enemies:dgPersist(S.enemies),time:S.time,cam:{x:cam.x,y:cam.y,zoom:cam.zoom}};o.room=D.room;o.boss=D.boss;o.mech=dgPersist(D.mech);o.summon=dgPersist(D.summon);o.queue=(D.queue||[]).map(q=>({t:q.t,room:D.L.rooms.indexOf(q.r)}));}
   if(D.L){o.L={rooms:dgClone(D.L.rooms||[]),kind:D.L.kind,fl:D.L.fl?Array.from(D.L.fl):null,block:D.L.block?Array.from(D.L.block):null};}
   return o;
@@ -203,11 +227,12 @@ function dgFromSave(o){
 {const _sn=snapshot;snapshot=function(){
   if(S&&S.dg){
     let pre;
-    if(S.dg.pre)pre=dgMergeSnapProgress(dgClone(S.dg.pre),typeof mapDgAreaCoopLive==='function'&&mapDgAreaCoopLive());
+    const foldLoot=typeof mapDgAreaCoopLive==='function'&&mapDgAreaCoopLive()&&!(S.dg&&S.dg.kind==='xf');
+    if(S.dg.pre)pre=dgMergeSnapProgress(dgClone(S.dg.pre),foldLoot);
     else{
       const hold=S.dg;S.dg=null;
       try{pre=_sn();}finally{S.dg=hold;}
-      try{dgMergeSnapProgress(pre,typeof mapDgAreaCoopLive==='function'&&mapDgAreaCoopLive());}catch(e){}
+      try{dgMergeSnapProgress(pre,foldLoot);}catch(e){}
     }
     try{if(pre)pre.dg=dgToSave(S.dg);}catch(e){}
     return pre;
@@ -300,7 +325,7 @@ function drawDungeon(base){const D=S.dg,L=D.L,G=DGS[D.kind];ctx.setTransform(dpr
 {const _en=enemyName;enemyName=function(e){if(e&&e.dgName){e._hadDgName=1;}return _en(e);};}
 // 副本內的點擊：點敵人＝攻擊，點地面＝移動，點自己人＝選取
 function dgTap(x,y){const w=screenToWorld(x,y);const u=unitAt(w,S.units,14);if(u){selUnits=[u.id];panelKeyCache=null;return;}
-  const e=enemyAt(w),us=commandUnits();if(e){us.forEach(v=>setTask(v,{type:'attack',eid:e.id,man:1}));markers.push({x:e.x,y:e.y,t:0,col:'#ff5050'});return;}
+  const e=enemyAt(w),us=commandUnits();if(e){us.forEach(v=>setTask(v,{type:'attack',eid:e.id,man:1,pack:xwAttackPack(e,v),ax:e.x,ay:e.y}));markers.push({x:e.x,y:e.y,t:0,col:'#ff5050'});return;}
   const t=tileAtWorld(w);commandMove(us,clamp(t.x,0.3,N-0.3),clamp(t.y,0.3,N-0.3),false);}
 {const _t=tapAt;tapAt=function(x,y){if(S.dg){dgTap(x,y);return;}if(tapV045(x,y))return;_t(x,y);};}
 {const _r=rightClick;rightClick=function(x,y,sh){if(S.dg){dgTap(x,y);return;}if(rightV045(x,y,sh))return;_r(x,y,sh);};}

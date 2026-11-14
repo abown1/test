@@ -1,0 +1,17 @@
+{
+  "v": 7,
+  "seed": 99,
+  "time": 4000,
+  "res": {"wood": 12, "stone": 7, "fiber": 3, "food": 9, "iron": 4, "herb": 2, "lingshi": 88},
+  "items": {"miji": 1, "gongfa": 2, "xfl": 1},
+  "mats": {"hide": 5, "bone": 1, "core": 0, "lingzhi": 1, "xuantie": 0},
+  "buildings": [
+    {"id": 10, "type": "hall", "x": 18, "y": 22, "lv": 2, "hp": 900, "maxhp": 1120, "built": true},
+    {"id": 11, "type": "altar", "x": 24, "y": 22, "lv": 1, "hp": 400, "maxhp": 400, "built": true}
+  ],
+  "units": [
+    {"id": 1, "kind": "player", "name": "你", "realm": 3, "sub": 3, "xiu": 835, "hp": 8400, "maxhp": 8400, "atk": 270, "body": 6},
+    {"id": 2, "kind": "disciple", "name": "林清風", "realm": 1, "sub": 2, "xiu": 10, "hp": 5000, "maxhp": 5500, "atk": 100, "body": 1, "job": "chop"}
+  ],
+  "inv": [{"id": 3, "t": "sword", "n": "長劍", "q": 2}]
+}

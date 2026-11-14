@@ -1,0 +1,29 @@
+; Engine configuration file.
+; Godot 4.5，網頁版用相容性繪圖，並關閉多執行緒。
+
+config_version=5
+
+[application]
+
+config/name="仙武之體"
+config/description="仙武之體單人版，武徒到煉氣"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.5", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[internationalization]
+
+locale/fallback="zh_TW"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true

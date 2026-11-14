@@ -64,10 +64,10 @@ const BUILD := {
 	"alchemy": {"name": "煉丹房", "cost": {"wood": 50, "stone": 40, "herb": 5}, "time": 14.0, "hp": 450, "pop": 0, "desc": "煉丹。要先有長書閣。"},
 	"forge": {"name": "鍛造坊", "cost": {"wood": 50, "stone": 50, "iron": 10}, "time": 14.0, "hp": 550, "pop": 0, "desc": "打造兵器衣甲。要先有武道館。數量沒有上限。"},
 	"xianyuan": {"name": "仙緣閣", "cost": {"wood": 60, "stone": 40, "lingshi": 20}, "time": 18.0, "hp": 500, "pop": 0, "desc": "有人到煉氣才解鎖。"},
-	"shitang": {"name": "食堂", "cost": {"wood": 30, "stone": 10, "food": 5}, "time": 8.0, "hp": 280, "pop": 0, "desc": "弟子吃飯要走進這裡。解鎖境界還沒單獨立過，這版跟大殿一起能蓋。"},
+	"shitang": {"name": "食堂", "cost": {"wood": 30, "stone": 10, "food": 5}, "time": 8.0, "hp": 280, "pop": 0, "desc": "武徒就能蓋。弟子吃飯要走進這裡。"},
 	"cangku": {"name": "倉庫", "cost": {"wood": 40, "stone": 40}, "time": 12.0, "hp": 400, "pop": 0, "desc": "宗師解鎖。格子數官方沒有另訂，這版先跟行囊一樣 60 格。"},
 	"renwutang": {"name": "任務堂", "cost": {"wood": 35, "stone": 20, "fiber": 10}, "time": 10.0, "hp": 320, "pop": 0, "desc": "武師解鎖。任務板只在這裡看。"},
-	"gongfage": {"name": "功法閣", "cost": {"wood": 40, "stone": 20, "fiber": 20}, "time": 12.0, "hp": 360, "pop": 0, "desc": "傳授功法。境界門檻還沒定，這版要先有長書閣。宗主免費，弟子扣俸祿。"},
+	"gongfage": {"name": "功法閣", "cost": {"wood": 40, "stone": 20, "fiber": 20}, "time": 12.0, "hp": 360, "pop": 0, "desc": "大武師解鎖。傳授功法。宗主免費，弟子扣俸祿。"},
 	"biwutai": {"name": "比武台", "cost": {"wood": 40, "stone": 40}, "time": 12.0, "hp": 500, "pop": 0, "desc": "大武師解鎖。切磋要進這裡選人。"},
 	"kuangchang": {"name": "礦場", "cost": {"wood": 30, "stone": 20, "iron": 5}, "time": 12.0, "hp": 400, "pop": 0, "desc": "宗師解鎖。每級加幾成產鐵還沒定，這版不加隱藏倍率，弟子會到這裡挖鐵。"},
 	"waishitang": {"name": "外事堂", "cost": {"wood": 40, "stone": 30, "fiber": 10}, "time": 12.0, "hp": 360, "pop": 0, "desc": "宗師解鎖。裡面可以寄賣，也可以買賣藥草。"},
@@ -158,7 +158,10 @@ const SKILLS := {
 }
 
 const INV_CAP := 60
-const WARE_CAP := 60
+const WARE_CAP := 100
+const ZHIBAO_OLD := "赤霄四劍圖"
+const ZHIBAO_NEW := "四鋒束域圖"
+const ZHIBAO_TID := "zbt09"
 const CARRY_CAP := 10
 const RECRUIT_COST := 20
 const RECRUIT_TIME := 4.0
@@ -180,6 +183,8 @@ static func is_xw(u: Dictionary) -> bool:
 	return int(u.get("body", -1)) == 6
 
 static func order_name(id: String) -> String:
+	if id == "build":
+		return "蓋房子"
 	for pair in ORDERS:
 		if pair[0] == id:
 			return pair[1]

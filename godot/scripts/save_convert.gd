@@ -74,6 +74,10 @@ static func convert_snapshot(d: Dictionary) -> Dictionary:
 		for b in src["buildings"]:
 			if typeof(b) == TYPE_DICTIONARY:
 				buildings.append((b as Dictionary).duplicate(true))
+	_rename_zhibao(inv)
+	_rename_zhibao(units)
+	_rename_zhibao(buildings)
+	_rename_zhibao(items)
 	var save := {
 		"fmt": "xianwu_godot_1",
 		"from": "js",
@@ -112,6 +116,22 @@ static func convert_snapshot(d: Dictionary) -> Dictionary:
 		"gongfa": int(items.get("gongfa", 0)),
 	}
 	return {"ok": true, "msg": "已轉成新版。舊檔留在原地，沒有覆蓋。", "save": save, "summary": summary}
+
+static func _rename_zhibao(node) -> void:
+	if typeof(node) == TYPE_DICTIONARY:
+		var tid := str(node.get("tid", ""))
+		var prev := str(node.get("n", node.get("name", "")))
+		if prev == XWData.ZHIBAO_OLD or tid == XWData.ZHIBAO_TID:
+			if prev != "" and prev != XWData.ZHIBAO_NEW:
+				node["old_n"] = prev
+			node["n"] = XWData.ZHIBAO_NEW
+			if str(node.get("name", "")) == XWData.ZHIBAO_OLD:
+				node["name"] = XWData.ZHIBAO_NEW
+		for k in node.keys():
+			_rename_zhibao(node[k])
+	elif typeof(node) == TYPE_ARRAY:
+		for child in node:
+			_rename_zhibao(child)
 
 static func same_assets(summary: Dictionary, expect: Dictionary) -> bool:
 	for k in expect.keys():

@@ -204,6 +204,7 @@ func tick(dt: float) -> void:
 	dt = clampf(dt, 0.0, 0.1)
 	time += dt
 	_pay_stipend(dt)
+	_elder_dispatch()
 	for u in units:
 		if bool(u.get("dead", false)):
 			continue
@@ -217,6 +218,8 @@ func tick(dt: float) -> void:
 			_player_task(u, dt)
 		else:
 			_disciple_ai(u, dt)
+		if time - float(u.get("last_combat", -99)) < 5.0:
+			gongfa_tick(u, dt, 3.0)
 	for e in enemies:
 		_enemy_ai(e, dt)
 	_build_progress(dt)
@@ -279,8 +282,8 @@ func unlocked(ty: String) -> Dictionary:
 			if not has_built("library"):
 				return {"ok": false, "msg": "要先蓋好長書閣。"}
 		"gongfage":
-			if not has_built("library"):
-				return {"ok": false, "msg": "功法閣的境界門檻還沒定。這版要先有長書閣。"}
+			if r < 2:
+				return {"ok": false, "msg": "功法閣：大武師解鎖。"}
 		"renwutang":
 			if r < 1:
 				return {"ok": false, "msg": "任務堂：武師解鎖。"}
@@ -965,7 +968,7 @@ func prof_text(kind: String) -> String:
 		return "%s熟練已到 100 級上限。" % name
 	return "%s熟練 Lv%d（%d／%d）。每件先記 10 點，這個點數還沒定案。" % [name, lv, cur, need]
 
-func gongfa_tick(u: Dictionary, dt: float) -> void:
+func gongfa_tick(u: Dictionary, dt: float, rate: float = 1.0) -> void:
 	var gf: Dictionary = u.get("gf", {})
 	if typeof(gf) != TYPE_DICTIONARY or gf.is_empty():
 		return
@@ -982,7 +985,7 @@ func gongfa_tick(u: Dictionary, dt: float) -> void:
 		return
 	var g2 := XWData.gongfa_by_id(hid)
 	var mul := XWRules.gongfa_mul(int(u.get("realm", 0)), int(g2["realm"]), hall_level())
-	var xp := 1.0 * mul * dt
+	var xp := rate * mul * dt
 	var box: Dictionary = u.get("gf_xp", {})
 	box[hid] = float(box.get(hid, 0.0)) + xp
 	var stage := int(gf[hid])
@@ -1133,7 +1136,8 @@ func _player_task(u: Dictionary, dt: float) -> void:
 			elif interior_type() == "wudao":
 				place = 1.6
 			gain_xiu(u, 1.2 * place * _cult_mul() * dt)
-			gongfa_tick(u, dt)
+			if time - float(u.get("last_combat", -99)) >= 5.0:
+				gongfa_tick(u, dt, 1.0)
 		return
 	var task: Dictionary = u.get("task", {})
 	if typeof(task) != TYPE_DICTIONARY or task.is_empty():
@@ -1319,7 +1323,8 @@ func _goto_building_job(u: Dictionary, ty: String, dt: float, label: String) -> 
 		gain_xiu(u, 1.2 * 1.6 * _cult_mul() * dt)
 	elif label == "閉關":
 		gain_xiu(u, 1.2 * 2.4 * _cult_mul() * dt)
-		gongfa_tick(u, dt)
+		if time - float(u.get("last_combat", -99)) >= 5.0:
+			gongfa_tick(u, dt, 1.0)
 	elif label == "研究":
 		pass
 	elif label == "鍛造" or label == "煉丹":
@@ -1360,10 +1365,32 @@ func _eat_job(u: Dictionary, dt: float) -> void:
 	u["doing"] = "吃完了"
 	say("%s 在食堂吃了一份食物。" % str(u.get("name")))
 
+func _elder_dispatch() -> void:
+	var has_elder := false
+	for d in disciples():
+		if str(d.get("post")) == "長老":
+			has_elder = true
+			break
+	if not has_elder:
+		return
+	var sent_to_build := false
+	for d in disciples():
+		if str(d.get("order", "dai")) != "dai":
+			continue
+		if sent_to_build:
+			d["order"] = _gather_for_cost(XWData.BUILD["hall"]["cost"]) if not has_built("hall") else "chop"
+			continue
+		var job := _auto_choice(d)
+		if job == "build":
+			sent_to_build = true
+		d["order"] = job
+
 func _build_job(u: Dictionary, dt: float) -> void:
 	var b := building_by_id(int(u.get("build_id", -1)))
 	if b.is_empty() or bool(b.get("built")):
-		u["doing"] = "自行：看看還缺什麼"
+		if str(u.get("order")) == "build":
+			u["order"] = "dai"
+		u["doing"] = "這棟蓋好了"
 		return
 	if _dist_xy(float(u["x"]), float(u["y"]), float(b["x"]), float(b["y"])) > 1.6:
 		_step_toward(u, float(b["x"]) + _slot_offset(u), float(b["y"]), dt)
@@ -1808,9 +1835,12 @@ func _give_item(it) -> bool:
 func _item_name(it) -> String:
 	if typeof(it) != TYPE_DICTIONARY:
 		return "物品"
-	if str(it.get("n", "")) != "":
-		return str(it["n"])
-	return str(it.get("t", "物品"))
+	var n := str(it.get("n", ""))
+	if n == "":
+		n = str(it.get("t", "物品"))
+	if n == XWData.ZHIBAO_OLD or str(it.get("tid", "")) == XWData.ZHIBAO_TID:
+		return XWData.ZHIBAO_NEW
+	return n
 
 func _built_or_wip(ty: String) -> int:
 	var n := 0
